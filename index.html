@@ -1,0 +1,1528 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none!important}
+</style>
+<title>Losbude</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pixelify+Sans:wght@400..700&family=VT323&display=swap">
+<style>
+/* Layout: türkiser Desktop mit grauen Fenstern. Links Losbude (Rad) und Ergebnis, rechts Einstellungen, Teilnehmer, Verlauf. Unten eine feste Taskleiste. */
+:root {
+  --font-ui: Tahoma, 'MS Sans Serif', 'Segoe UI', Verdana, Geneva, sans-serif;
+  --font-pixel: 'Pixelify Sans', Tahoma, Verdana, sans-serif;
+  --font-mono: 'VT323', 'Courier New', monospace;
+
+  --desk: #008080;
+  --face: #c0c0c0;
+  --face-lt: #dfdfdf;
+  --hi: #ffffff;
+  --lo: #808080;
+  --dk: #000000;
+  --title-a: #000080;
+  --title-b: #1084d0;
+  --title-fg: #ffffff;
+  --field: #ffffff;
+  --text: #000000;
+  --muted: #404040;
+  --sel: #000080;
+  --link: #0000ee;
+  --pointer: #ff0000;
+  --danger: #b00000;
+  color-scheme: light;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--desk);
+  color: var(--text);
+  font: 400 14px/1.4 var(--font-ui);
+  padding-inline: 16px;
+  padding-block: 16px calc(60px + env(safe-area-inset-bottom, 0px));
+}
+.page { max-width: 1120px; margin-inline: auto; }
+:focus-visible { outline: 2px solid var(--sel); outline-offset: 2px; }
+button { font: inherit; color: inherit; }
+
+/* Rahmen im 3D-Stil */
+.raised {
+  background: var(--face);
+  border: 2px solid;
+  border-color: var(--hi) var(--dk) var(--dk) var(--hi);
+  box-shadow: inset -1px -1px 0 var(--lo), inset 1px 1px 0 var(--face-lt);
+}
+.sunken {
+  background: var(--field);
+  border: 2px solid;
+  border-color: var(--lo) var(--hi) var(--hi) var(--lo);
+  box-shadow: inset 1px 1px 0 var(--dk), inset -1px -1px 0 var(--face-lt);
+}
+
+.win { padding: 3px; }
+.titlebar {
+  display: flex; align-items: center; gap: 8px; padding: 3px 4px;
+  background: linear-gradient(90deg, var(--title-a), var(--title-b));
+  color: var(--title-fg); font-weight: 700; font-size: 13px;
+}
+.tt { flex: 1; min-width: 0; margin: 0; font: inherit; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tb-btns { display: flex; gap: 2px; }
+.tb-btns span {
+  display: grid; place-items: center; width: 18px; height: 16px; color: var(--text);
+  font: 700 11px/1 var(--font-ui);
+  background: var(--face); border: 2px solid; border-color: var(--hi) var(--dk) var(--dk) var(--hi);
+}
+.win-body { padding: 12px; }
+.stack { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+/* Knöpfe */
+.btn {
+  min-height: 30px; padding: 4px 14px; color: var(--text); cursor: pointer;
+  background: var(--face); border: 2px solid; border-color: var(--hi) var(--dk) var(--dk) var(--hi);
+  box-shadow: inset -1px -1px 0 var(--lo), inset 1px 1px 0 var(--face-lt);
+}
+.btn:active:not(:disabled) {
+  border-color: var(--dk) var(--hi) var(--hi) var(--dk);
+  box-shadow: inset 1px 1px 0 var(--lo);
+  padding: 5px 13px 3px 15px;
+}
+.btn:focus-visible { outline: 1px dotted var(--dk); outline-offset: -6px; }
+.btn:disabled { color: var(--lo); text-shadow: 1px 1px 0 var(--hi); cursor: not-allowed; }
+.btn.danger { color: var(--danger); font-weight: 700; }
+.btn.sq { width: 32px; min-width: 32px; padding: 0; font: 700 16px/1 var(--font-ui); }
+.spin {
+  display: block; margin: 14px auto 0; min-width: min(100%, 240px); min-height: 52px; padding: 8px 28px;
+  font: 700 22px/1 var(--font-pixel);
+  box-shadow: 0 0 0 1px var(--dk), inset -1px -1px 0 var(--lo), inset 1px 1px 0 var(--face-lt);
+}
+.link { padding: 0; border: 0; background: none; color: var(--link); text-decoration: underline; cursor: pointer; }
+.field {
+  width: 100%; padding: 5px 6px; color: var(--text); font: inherit;
+  background: var(--field); border: 2px solid; border-color: var(--lo) var(--hi) var(--hi) var(--lo);
+  box-shadow: inset 1px 1px 0 var(--dk);
+}
+
+/* Fenster: Losbude */
+.intro { margin: 0 0 10px; }
+.wheel-pane { padding: 14px 14px 12px; }
+.wheel-wrap { position: relative; width: min(100%, 520px); margin-inline: auto; padding-top: 12px; }
+#wheel { display: block; width: 100%; height: auto; filter: drop-shadow(6px 8px 0 rgba(0, 0, 0, 0.28)); }
+.pointer-wrap {
+  position: absolute; left: 50%; top: -4px; width: 40px; height: 54px; margin-left: -20px; z-index: 2;
+  filter: drop-shadow(1px 0 0 #000) drop-shadow(-1px 0 0 #000) drop-shadow(0 1px 0 #000) drop-shadow(0 -1px 0 #000);
+}
+.pointer {
+  width: 100%; height: 100%; background: linear-gradient(135deg, #ff9a9a 0%, var(--pointer) 40%, #8a0000 100%);
+  clip-path: polygon(50% 100%, 0 14%, 12% 0, 88% 0, 100% 14%); transform-origin: 50% 8%;
+}
+.status { min-height: 1.4em; margin: 10px 0 0; text-align: center; }
+.statusbar { display: flex; flex-wrap: wrap; gap: 2px; margin-top: 12px; }
+.statusbar span {
+  flex: 1 1 auto; padding: 2px 8px; font-size: 12px; white-space: nowrap;
+  border: 1px solid; border-color: var(--lo) var(--hi) var(--hi) var(--lo);
+}
+
+/* Fenster: Ergebnis */
+.result-body { display: flex; gap: 14px; align-items: flex-start; }
+.msg-icon {
+  flex: none; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%;
+  background: #0000ff; color: #fff; border: 2px solid #fff; box-shadow: 0 0 0 1px #000;
+  font: italic 700 24px/1 Georgia, 'Times New Roman', serif;
+}
+.result-main { flex: 1; min-width: 0; }
+.t-task { margin: 0 0 8px; }
+.t-name {
+  min-height: 2.4em; margin: 0; padding: 8px 12px; color: var(--text);
+  font: 700 clamp(1.7rem, 6vw, 2.6rem)/1.1 var(--font-ui); overflow-wrap: anywhere; text-wrap: balance;
+}
+.t-name.is-idle { color: var(--lo); }
+.t-meta { margin: 8px 0 0; font-size: 12px; color: var(--muted); min-height: 1.4em; }
+.win.pop { animation: pop 0.4s ease-out; }
+@keyframes pop { 0% { transform: scale(0.97); } 60% { transform: scale(1.012); } 100% { transform: scale(1); } }
+
+/* Layout */
+.layout { display: grid; gap: 16px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 880px) {
+  .layout { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); align-items: start; }
+}
+@media (min-width: 880px) and (min-height: 900px) {
+  .stage { position: sticky; top: 16px; }
+}
+
+/* Einstellungen */
+.row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.row .lbl { flex: none; font-weight: 700; }
+.static { flex: 1; min-width: 0; padding: 5px 8px; font-weight: 700; overflow-wrap: anywhere; }
+.stepper { display: flex; align-items: center; gap: 8px; }
+.stepper .lbl { margin-right: auto; font-weight: 700; }
+.step-val { min-width: 48px; padding: 0 8px; text-align: center; font: 400 24px/1.3 var(--font-mono); font-variant-numeric: tabular-nums; }
+.group {
+  margin: 16px 0 0; padding: 6px 12px 10px; min-width: 0;
+  border: 1px solid var(--lo); box-shadow: 1px 1px 0 var(--hi), inset 1px 1px 0 var(--hi);
+}
+.group legend { padding: 0 4px; }
+.radio { display: flex; align-items: center; gap: 8px; padding: 5px 0; cursor: pointer; }
+.radio input {
+  -webkit-appearance: none; appearance: none; flex: none; display: grid; place-items: center;
+  width: 14px; height: 14px; margin: 0; border-radius: 50%; background: var(--field);
+  border: 2px solid; border-color: var(--lo) var(--hi) var(--hi) var(--lo); box-shadow: inset 1px 1px 0 var(--dk);
+}
+.radio input:checked::after { content: ''; width: 4px; height: 4px; border-radius: 50%; background: var(--dk); }
+.mode-text { margin: 8px 0 0; font-size: 13px; max-width: 62ch; }
+
+/* Teilnehmer */
+.note { margin: 0 0 10px; font-size: 13px; }
+.listbox { margin: 0 0 12px; padding: 0 8px; list-style: none; }
+.person {
+  display: grid; grid-template-columns: 14px minmax(0, 1fr) auto 30px;
+  grid-template-areas: "dot name chance rm" ". bar bar .";
+  column-gap: 10px; row-gap: 4px; align-items: center; padding-block: 8px; border-bottom: 1px dotted var(--lo);
+}
+.person:last-child { border-bottom: 0; }
+.dot { grid-area: dot; width: 14px; height: 14px; border: 1px solid var(--dk); }
+.pname { grid-area: name; min-width: 0; font-weight: 700; overflow-wrap: anywhere; }
+.pname small { display: inline-block; margin-left: 6px; font: 400 12px var(--font-ui); color: var(--muted); }
+.person.done .pname { color: var(--muted); font-weight: 400; text-decoration: line-through; }
+.person.done .dot { opacity: 0.35; }
+.chance { grid-area: chance; font: 400 22px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+.rm { grid-area: rm; width: 30px; min-width: 30px; min-height: 26px; padding: 0; font: 700 14px/1 var(--font-ui); }
+.pbar { grid-area: bar; display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.ptrack {
+  flex: 1; height: 14px; padding: 1px; background: var(--field);
+  border: 1px solid; border-color: var(--lo) var(--hi) var(--hi) var(--lo);
+}
+.pfill { height: 100%; background: repeating-linear-gradient(90deg, var(--sel) 0 7px, transparent 7px 9px); }
+.add { display: flex; gap: 8px; }
+.add .field { flex: 1; min-width: 0; }
+.msg { min-height: 1.4em; margin: 8px 0 0; color: var(--danger); font-size: 13px; }
+
+/* Verlauf */
+.lv-wrap { margin-bottom: 12px; overflow-x: auto; }
+.lv { width: 100%; border-collapse: collapse; font-size: 13px; }
+.lv th {
+  position: sticky; top: 0; padding: 3px 8px; text-align: left; font-weight: 400; white-space: nowrap;
+  background: var(--face); border: 2px solid; border-color: var(--hi) var(--dk) var(--dk) var(--hi);
+  box-shadow: inset -1px -1px 0 var(--lo);
+}
+.lv td { padding: 4px 8px; vertical-align: top; }
+.lv .nr, .lv .when, .lv .mode { white-space: nowrap; }
+.lv .who { min-width: 7em; font-weight: 700; overflow-wrap: anywhere; }
+.lv .empty { padding: 10px 8px; color: var(--muted); }
+.more { margin: 0 0 12px; font-size: 13px; color: var(--muted); }
+
+/* Taskleiste */
+.taskbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex; align-items: center; gap: 6px;
+  padding: 4px 6px calc(4px + env(safe-area-inset-bottom, 0px));
+  background: var(--face); border-top: 2px solid var(--hi); box-shadow: 0 -1px 0 var(--face-lt);
+}
+.start, .task-item {
+  display: flex; align-items: center; gap: 6px; min-height: 30px; padding: 2px 10px; font-weight: 700; white-space: nowrap;
+}
+.start { border: 2px solid; border-color: var(--hi) var(--dk) var(--dk) var(--hi); box-shadow: inset -1px -1px 0 var(--lo); }
+.flag { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; width: 16px; height: 14px; }
+.flag i:nth-child(1) { background: #ff0000; }
+.flag i:nth-child(2) { background: #00a000; }
+.flag i:nth-child(3) { background: #0000ff; }
+.flag i:nth-child(4) { background: #ffff00; }
+.task-item {
+  flex: 0 1 140px; min-width: 0; overflow: hidden; text-overflow: ellipsis; cursor: pointer; color: var(--text);
+  background: var(--face); border: 2px solid; border-color: var(--hi) var(--dk) var(--dk) var(--hi);
+  box-shadow: inset -1px -1px 0 var(--lo);
+}
+.task-item[aria-pressed="true"] {
+  background: repeating-conic-gradient(var(--face) 0 25%, var(--hi) 0 50%) 0 0 / 2px 2px;
+  border-color: var(--dk) var(--hi) var(--hi) var(--dk); box-shadow: none;
+}
+.tray {
+  display: flex; align-items: center; gap: 4px; margin-left: auto; padding: 2px 8px; min-height: 30px; font-size: 13px;
+  border: 1px solid; border-color: var(--lo) var(--hi) var(--hi) var(--lo);
+}
+.tray button { padding: 2px 4px; border: 0; background: none; cursor: pointer; font-size: 13px; }
+.tray button:hover { text-decoration: underline; }
+.tray .clock { padding-left: 8px; border-left: 1px solid var(--lo); font: 400 18px/1 var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* Desktop mit Symbolen und App-Fenster */
+.desktop { position: relative; min-height: 380px; }
+.icons { position: absolute; top: 0; left: 0; display: flex; flex-direction: column; gap: 14px; }
+.icon {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100px; padding: 6px 4px;
+  background: none; border: 1px solid transparent; color: #ffffff; cursor: pointer; font: 13px/1.2 var(--font-ui);
+}
+.icon:focus-visible { outline: 1px dotted #ffffff; outline-offset: 0; }
+.icon .ico { display: grid; place-items: center; width: 52px; height: 52px; }
+.icon .cap { padding: 1px 4px; text-align: center; text-shadow: 1px 1px 0 #000000; overflow-wrap: anywhere; }
+.icon.sel .cap { background: var(--sel); text-shadow: none; outline: 1px dotted #ffffff; }
+.sh-wheel {
+  position: relative; display: block; width: 46px; height: 46px; border-radius: 50%; border: 2px solid #000000;
+  background: conic-gradient(#ff0000 0 25%, #ffff00 0 50%, #0000ff 0 75%, #00ff00 0);
+  box-shadow: 3px 4px 0 rgba(0, 0, 0, 0.35);
+}
+.sh-wheel::before {
+  content: ''; position: absolute; inset: 0; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0) 55%, rgba(0, 0, 0, 0.35));
+}
+.sh-wheel::after {
+  content: ''; position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px;
+  border-radius: 50%; background: #ff0000; border: 2px solid #000000;
+}
+.sh-pc {
+  position: relative; display: block; width: 46px; height: 34px; margin-bottom: 10px; background: var(--face);
+  border: 2px solid; border-color: var(--hi) var(--dk) var(--dk) var(--hi); box-shadow: inset -1px -1px 0 var(--lo);
+}
+.sh-pc::before { content: ''; position: absolute; inset: 4px 4px 8px; background: #000080; border: 1px solid var(--dk); }
+.sh-pc::after {
+  content: ''; position: absolute; left: 50%; bottom: -11px; width: 26px; height: 7px; margin-left: -13px;
+  background: var(--face); border: 2px solid; border-color: var(--hi) var(--dk) var(--dk) var(--hi);
+}
+.sh-trash {
+  position: relative; display: block; width: 28px; height: 34px; margin-top: 8px; border: 2px solid #000000;
+  background: repeating-linear-gradient(90deg, #808080 0 4px, #c0c0c0 4px 8px); border-radius: 0 0 5px 5px;
+}
+.sh-trash::before {
+  content: ''; position: absolute; left: -5px; right: -5px; top: -9px; height: 6px; background: #c0c0c0; border: 2px solid #000000;
+}
+.tip {
+  position: absolute; left: 112px; top: 26px; padding: 2px 8px; background: #ffffe1; color: #000000; font-size: 12px;
+  border: 1px solid #000000; box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3); white-space: nowrap;
+}
+.app { position: relative; z-index: 1; }
+.workspace { padding: 12px; background: #808080; border: 2px solid; border-color: var(--dk) var(--hi) var(--hi) var(--dk); }
+.err-icon.info { background: #0000ff; font: italic 700 26px/1 Georgia, 'Times New Roman', serif; }
+@media (min-width: 880px) { .app { margin-left: 124px; } }
+@media (max-width: 600px) {
+  .workspace { padding: 6px; }
+  .layout, .stack { gap: 10px; }
+  .win-body, .wheel-pane { padding: 8px; }
+  .tip { left: 100px; }
+}
+
+/* Fortschrittsbalken und Konfetti */
+.progress { margin-top: 10px; }
+.progress-lbl { margin: 0 0 4px; font-size: 13px; }
+.progress .ptrack { height: 20px; padding: 2px; }
+#confetti { position: fixed; inset: 0; z-index: 20; width: 100%; height: 100%; pointer-events: none; }
+
+/* Meldungsfenster */
+.overlay {
+  position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center;
+  padding: 16px; background: rgba(0, 128, 128, 0.55);
+}
+.dlg { width: min(100%, 420px); }
+.tb-x {
+  display: grid; place-items: center; width: 18px; height: 16px; padding: 0; cursor: pointer;
+  color: var(--text); font: 700 11px/1 var(--font-ui);
+  background: var(--face); border: 2px solid; border-color: var(--hi) var(--dk) var(--dk) var(--hi);
+}
+.dlg-body { display: flex; gap: 16px; align-items: flex-start; padding: 18px 16px 6px; }
+.err-icon {
+  flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%;
+  background: #ff0000; color: #fff; border: 2px solid #fff; box-shadow: 0 0 0 1px #000;
+  font: 700 26px/1 var(--font-ui);
+}
+.dlg-text { flex: 1; min-width: 0; }
+.dlg-main { margin: 0 0 8px; font: 700 1.35rem/1.25 var(--font-ui); overflow-wrap: anywhere; }
+.dlg-sub { margin: 0; color: var(--muted); font-size: 13px; }
+.dlg-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; padding: 14px 16px 16px; }
+.dlg-actions .btn {
+  min-width: 100px;
+  box-shadow: 0 0 0 1px var(--dk), inset -1px -1px 0 var(--lo), inset 1px 1px 0 var(--face-lt);
+}
+
+@media (pointer: coarse) { .tb-x { width: 28px; height: 24px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+</style>
+</head>
+<body>
+<div class="desktop" id="desktop">
+  <nav class="icons" aria-label="Desktop">
+    <button type="button" class="icon" id="icon-losbude"><span class="ico"><i class="sh-wheel"></i></span><span class="cap">Losbude</span></button>
+    <button type="button" class="icon" id="icon-pc"><span class="ico"><i class="sh-pc"></i></span><span class="cap">Arbeitsplatz</span></button>
+    <button type="button" class="icon" id="icon-trash"><span class="ico"><i class="sh-trash"></i></span><span class="cap">Papierkorb</span></button>
+  </nav>
+  <div class="tip" id="tip" role="note"></div>
+
+  <div class="app" id="app" hidden>
+    <section class="win raised" aria-labelledby="h-app">
+      <div class="titlebar">
+        <h1 class="tt" id="h-app">Losbude – Lamuro holen</h1>
+        <div class="tb-btns">
+          <button type="button" class="tb-x" id="app-min" aria-label="Minimieren">_</button>
+          <button type="button" class="tb-x" id="app-close" aria-label="Schließen">×</button>
+        </div>
+      </div>
+      <div class="workspace">
+<div class="page" id="page">
+  <div class="layout">
+    <div class="stack stage">
+      <section class="win raised" aria-labelledby="h-main">
+        <div class="titlebar">
+          <h2 class="tt" id="h-main">Glücksrad</h2>
+          <div class="tb-btns" aria-hidden="true"><span>_</span><span>□</span><span>×</span></div>
+        </div>
+        <div class="win-body">
+          <p class="intro">Wer holt Lamuro? Das Rad entscheidet.</p>
+          <div class="wheel-pane sunken">
+            <div class="wheel-wrap">
+              <div class="pointer-wrap" aria-hidden="true"><div class="pointer" id="pointer"></div></div>
+              <canvas id="wheel" width="1040" height="1100" role="img" aria-label="Glücksrad mit den Namen aller Teilnehmenden"></canvas>
+            </div>
+          </div>
+          <p class="status" id="status" aria-live="polite"></p>
+          <div class="progress" id="progress" hidden>
+            <p class="progress-lbl">Lamuro Sklave wird gesucht …</p>
+            <div class="ptrack"><div class="pfill" id="progress-fill" style="width:0%"></div></div>
+          </div>
+          <button type="button" class="btn spin" id="spin">Losen</button>
+          <div class="statusbar">
+            <span id="sb-n"></span>
+            <span id="sb-mode"></span>
+            <span id="sb-round"></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="win raised" id="ticket" aria-labelledby="t-title">
+        <div class="titlebar">
+          <h2 class="tt" id="t-title">Ergebnis – Los Nr. <span id="t-nr"></span></h2>
+          <div class="tb-btns" aria-hidden="true"><span>_</span><span>□</span><span>×</span></div>
+        </div>
+        <div class="win-body result-body" aria-live="polite">
+          <div class="msg-icon" aria-hidden="true">i</div>
+          <div class="result-main">
+            <p class="t-task">Aufgabe: <b id="t-task">Lamuro holen</b></p>
+            <p class="t-name sunken" id="t-name"></p>
+            <p class="t-meta" id="t-meta"></p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <aside class="stack side" id="side">
+      <section class="win raised" aria-labelledby="h-set">
+        <div class="titlebar">
+          <h2 class="tt" id="h-set">Einstellungen</h2>
+          <div class="tb-btns" aria-hidden="true"><span>_</span><span>□</span><span>×</span></div>
+        </div>
+        <div class="win-body">
+          <div class="row">
+            <span class="lbl">Aufgabe:</span>
+            <div class="static sunken" id="task-static">Lamuro holen</div>
+          </div>
+          <div class="stepper">
+            <span class="lbl" id="count-lbl">Wie viele Personen?</span>
+            <button type="button" class="btn sq" id="count-minus" aria-label="Eine Person weniger">−</button>
+            <span class="step-val sunken" id="count-val" aria-live="polite">1</span>
+            <button type="button" class="btn sq" id="count-plus" aria-label="Eine Person mehr">+</button>
+          </div>
+          <fieldset class="group">
+            <legend>Losmodus</legend>
+            <label class="radio"><input type="radio" name="mode" id="mode-random" value="random"><span>Zufall pur</span></label>
+            <label class="radio"><input type="radio" name="mode" id="mode-round" value="round"><span>Faire Runde</span></label>
+            <label class="radio"><input type="radio" name="mode" id="mode-balance" value="balance"><span>Ausgleich</span></label>
+            <p class="mode-text" id="mode-text"></p>
+          </fieldset>
+        </div>
+      </section>
+
+      <section class="win raised" aria-labelledby="h-people">
+        <div class="titlebar">
+          <h2 class="tt" id="h-people">Wer ist dabei?</h2>
+          <div class="tb-btns" aria-hidden="true"><span>_</span><span>□</span><span>×</span></div>
+        </div>
+        <div class="win-body">
+          <p class="note" id="round-info" hidden></p>
+          <p class="note" id="example-note" hidden>Das sind Beispielnamen. <button type="button" class="link" id="clear-example">Liste leeren</button> und eure Namen eintragen.</p>
+          <ul class="listbox sunken" id="people"></ul>
+          <form class="add" id="add-form" autocomplete="off">
+            <input class="field" id="name-in" type="text" maxlength="60" placeholder="Name, oder mehrere mit Komma" aria-label="Name hinzufügen">
+            <button type="submit" class="btn">Hinzufügen</button>
+          </form>
+          <p class="msg" id="add-msg" role="status"></p>
+        </div>
+      </section>
+
+      <section class="win raised" aria-labelledby="h-log">
+        <div class="titlebar">
+          <h2 class="tt" id="h-log">Verlauf</h2>
+          <div class="tb-btns" aria-hidden="true"><span>_</span><span>□</span><span>×</span></div>
+        </div>
+        <div class="win-body">
+          <div class="lv-wrap sunken">
+            <table class="lv">
+              <thead><tr><th>Nr.</th><th>Wer</th><th>Wann</th><th>Modus</th></tr></thead>
+              <tbody id="log"></tbody>
+            </table>
+          </div>
+          <p class="more" id="log-more" hidden></p>
+          <button type="button" class="btn" id="clear-log" hidden>Verlauf leeren</button>
+        </div>
+      </section>
+    </aside>
+  </div>
+</div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<canvas id="confetti" aria-hidden="true"></canvas>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="win raised dlg" role="alertdialog" aria-modal="true" aria-labelledby="dlg-title" aria-describedby="dlg-main">
+    <div class="titlebar">
+      <h2 class="tt" id="dlg-title">Lamuro.exe</h2>
+      <div class="tb-btns"><button type="button" class="tb-x" id="dlg-x" aria-label="Schließen">×</button></div>
+    </div>
+    <div class="dlg-body">
+      <div class="err-icon" id="dlg-icon" aria-hidden="true">×</div>
+      <div class="dlg-text">
+        <p class="dlg-main" id="dlg-main"></p>
+        <p class="dlg-sub" id="dlg-sub"></p>
+      </div>
+    </div>
+    <div class="dlg-actions">
+      <button type="button" class="btn" id="dlg-copy">Kopieren</button>
+      <button type="button" class="btn" id="dlg-ok">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="taskbar" id="taskbar">
+  <span class="start" aria-hidden="true"><span class="flag"><i></i><i></i><i></i><i></i></span>Start</span>
+  <button type="button" class="task-item" id="task-app" aria-pressed="true" hidden>Losbude</button>
+  <div class="tray">
+    <button type="button" id="sound" aria-pressed="true">Ton an</button>
+    <span class="clock" id="clock"></span>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  const TAU = Math.PI * 2;
+  const KEY = 'losbude-v2';
+  const TASK = 'Lamuro holen';
+  const FRIENDS = ['Dominik', 'Lenny', 'Kenan', 'Vinnie'];
+  // Schreibweise korrigieren, falls der Browser noch die alte gespeichert hat
+  const fixName = (n) => (n === 'Vinny' ? 'Vinnie' : n);
+  const MAX_NAMES = 12;
+  const FONT = '"Pixelify Sans", Tahoma, Verdana, sans-serif';
+  const FONT_WHEEL = 'Tahoma, Verdana, "Segoe UI", Arial, sans-serif';
+  const PALETTE = ['#ff0000', '#ffff00', '#0000ff', '#00ff00', '#ff00ff', '#00ffff', '#800000', '#008000', '#000080', '#800080', '#808000', '#ff8000'];
+  const MODE_LABEL = { random: 'Zufall pur', round: 'Faire Runde', balance: 'Ausgleich' };
+
+  const $ = (id) => document.getElementById(id);
+  const pad = (n) => String(n).padStart(3, '0');
+  const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+  const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function rand() {
+    const a = new Uint32Array(1);
+    window.crypto.getRandomValues(a);
+    return a[0] / 4294967296;
+  }
+
+  function h(tag, props, kids) {
+    const e = document.createElement(tag);
+    if (props) {
+      Object.keys(props).forEach((k) => {
+        const v = props[k];
+        if (k === 'class') e.className = v;
+        else if (k === 'text') e.textContent = v;
+        else if (k === 'style') e.style.cssText = v;
+        else if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), v);
+        else if (v === true) e.setAttribute(k, '');
+        else if (v !== false && v != null) e.setAttribute(k, v);
+      });
+    }
+    (kids || []).forEach((c) => {
+      if (c == null) return;
+      e.append(c.nodeType ? c : document.createTextNode(c));
+    });
+    return e;
+  }
+
+  /* ---------- Zustand ---------- */
+  function defaults() {
+    return {
+      names: FRIENDS.slice(),
+      example: false,
+      v: 4,
+      mode: 'round',
+      count: 1,
+      history: [],
+      roundDone: [],
+      round: 1,
+      seq: 0,
+      sound: true
+    };
+  }
+
+  function load() {
+    const d = defaults();
+    try {
+      const raw = localStorage.getItem(KEY);
+      if (!raw) return d;
+      const s = JSON.parse(raw);
+      if (!s || typeof s !== 'object') return d;
+      if (s.v === 4 && Array.isArray(s.names)) {
+        d.names = s.names.filter((x) => typeof x === 'string' && x.trim()).map((x) => x.slice(0, 18)).slice(0, MAX_NAMES).map(fixName);
+        d.example = s.example === true;
+      }
+      if (s.v >= 3 && MODE_LABEL[s.mode]) d.mode = s.mode;
+      if (Number.isInteger(s.count) && s.count >= 1) d.count = Math.min(s.count, 11);
+      if (Array.isArray(s.history)) {
+        d.history = s.history
+          .filter((e) => e && Array.isArray(e.names) && typeof e.ts === 'number')
+          .slice(0, 200)
+          .map((e) => ({
+            nr: parseInt(e.nr, 10) || 0,
+            ts: e.ts,
+            names: e.names.map(String).map(fixName),
+            mode: MODE_LABEL[e.mode] ? e.mode : 'random',
+            round: parseInt(e.round, 10) || 1
+          }));
+      }
+      if (Array.isArray(s.roundDone)) d.roundDone = s.roundDone.map(fixName).filter((n) => d.names.indexOf(n) !== -1);
+      d.round = Math.max(1, parseInt(s.round, 10) || 1);
+      d.seq = Math.max(0, parseInt(s.seq, 10) || 0);
+      d.sound = s.sound !== false;
+    } catch (e) { /* ohne Speicher weiterarbeiten */ }
+    return d;
+  }
+
+  const state = load();
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) { /* ignorieren */ }
+  }
+
+  let busy = false;
+  let current = null;      // Ergebnis-Ticket, wird nicht gespeichert
+  let wheelSegs = [];
+  let rot = 0;
+
+  function clampCount() {
+    state.count = Math.max(1, Math.min(state.count, Math.max(1, state.names.length - 1)));
+  }
+  clampCount();
+
+  /* ---------- Gewichte und Wahrscheinlichkeiten ---------- */
+  function counts() {
+    const c = new Map();
+    state.names.forEach((n) => c.set(n, 0));
+    state.history.forEach((e) => e.names.forEach((n) => { if (c.has(n)) c.set(n, c.get(n) + 1); }));
+    return c;
+  }
+
+  function weights(excl) {
+    excl = excl || new Set();
+    const w = new Map();
+    const c = counts();
+    const min = state.names.length ? Math.min.apply(null, state.names.map((n) => c.get(n))) : 0;
+    state.names.forEach((n) => {
+      let v = 1;
+      if (excl.has(n)) v = 0;
+      else if (state.mode === 'round') v = state.roundDone.indexOf(n) !== -1 ? 0 : 1;
+      else if (state.mode === 'balance') v = Math.pow(2, -Math.min(4, c.get(n) - min));
+      w.set(n, v);
+    });
+    let sum = 0;
+    w.forEach((v) => { sum += v; });
+    if (sum === 0) state.names.forEach((n) => { if (!excl.has(n)) w.set(n, 1); });
+    return w;
+  }
+
+  function buildSegs(w) {
+    let sum = 0;
+    w.forEach((v) => { sum += v; });
+    const segs = [];
+    let a = 0;
+    state.names.forEach((n, i) => {
+      const v = w.get(n);
+      if (v > 0) {
+        const span = (v / sum) * TAU;
+        segs.push({ name: n, color: PALETTE[i % PALETTE.length], a0: a, a1: a + span, p: v / sum });
+        a += span;
+      }
+    });
+    return segs;
+  }
+
+  function pickWeighted(segs) {
+    const r = rand();
+    let acc = 0;
+    for (let i = 0; i < segs.length; i++) {
+      acc += segs[i].p;
+      if (r < acc) return segs[i].name;
+    }
+    return segs[segs.length - 1].name;
+  }
+
+  /* ---------- Ton ---------- */
+  let actx = null;
+  let lastTick = 0;
+  function audio() {
+    if (!state.sound) return null;
+    try {
+      if (!actx) {
+        const C = window.AudioContext || window.webkitAudioContext;
+        if (!C) return null;
+        actx = new C();
+      }
+      if (actx.state === 'suspended') actx.resume();
+      return actx;
+    } catch (e) { return null; }
+  }
+  function blip(freq, dur, vol, type, when) {
+    const a = audio();
+    if (!a) return;
+    try {
+      const o = a.createOscillator();
+      const g = a.createGain();
+      const t = a.currentTime + (when || 0);
+      o.type = type || 'triangle';
+      o.frequency.value = freq;
+      g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g);
+      g.connect(a.destination);
+      o.start(t);
+      o.stop(t + dur + 0.02);
+    } catch (e) { /* ignorieren */ }
+  }
+  // sp: 1 = Rad dreht schnell, 0 = Rad steht fast. Schnelle Ticks klingen hoch und kurz, die letzten tief und dumpf.
+  function tick(sp) {
+    const now = performance.now();
+    if (now - lastTick < 35) return;
+    lastTick = now;
+    const s = typeof sp === 'number' ? sp : 0.5;
+    blip(380 + 880 * s, 0.03 + 0.05 * (1 - s), 0.045 + 0.04 * (1 - s), s < 0.04 ? 'triangle' : 'square');
+    if (!reduced()) {
+      try {
+        $('pointer').animate([{ transform: 'rotate(14deg)' }, { transform: 'rotate(0deg)' }], { duration: 110, easing: 'ease-out' });
+      } catch (e) { /* ignorieren */ }
+    }
+  }
+  function fanfare() {
+    [523, 659, 784, 1047].forEach((f, i) => blip(f, 0.22, 0.07, 'square', i * 0.11));
+  }
+
+  // Klick auf Knöpfe: kurzes "Tock". Klick irgendwo sonst: heller Systemton.
+  let lastClick = 0;
+  function clickSound(target) {
+    const now = performance.now();
+    if (now - lastClick < 60) return;
+    lastClick = now;
+    const control = target && target.closest && target.closest('button, label, input, a');
+    if (control) {
+      blip(520, 0.035, 0.05, 'square');
+      blip(330, 0.05, 0.05, 'square', 0.035);
+    } else {
+      blip(880, 0.28, 0.05, 'triangle');
+      blip(1320, 0.2, 0.025, 'triangle', 0.02);
+    }
+  }
+  function errorDing() {
+    blip(784, 0.16, 0.06, 'triangle');
+    blip(523, 0.3, 0.06, 'triangle', 0.14);
+  }
+  // Aufziehen beim Start: steigender Ton wie ein PC-Lautsprecher
+  function sweep(f0, f1, dur, vol, type) {
+    const a = audio();
+    if (!a) return;
+    try {
+      const o = a.createOscillator();
+      const g = a.createGain();
+      const t = a.currentTime;
+      o.type = type || 'square';
+      o.frequency.setValueAtTime(f0, t);
+      o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+      g.gain.setValueAtTime(vol, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g);
+      g.connect(a.destination);
+      o.start(t);
+      o.stop(t + dur + 0.02);
+    } catch (e) { /* ignorieren */ }
+  }
+  function spinStart() {
+    sweep(180, 1100, 0.45, 0.05, 'sawtooth');
+  }
+
+  /* ---------- Meldungsfenster ---------- */
+  const JOKES = [
+    'Ausreden wurden nicht gefunden.',
+    'Dieser Vorgang kann nicht abgebrochen werden.',
+    'Bitte nicht erneut versuchen.',
+    'Fehlercode 0x4C414D55: zu wenig Lamuro im Haus.'
+  ];
+  let lastFocus = null;
+  let lastMsg = '';
+
+  function showDialog(names) {
+    if (!names.length || !$('overlay').hidden) return;
+    $('dlg-title').textContent = 'Lamuro.exe';
+    $('dlg-copy').hidden = false;
+    setIcon('err');
+    const sentence = listNames(names) + (names.length > 1 ? ' müssen ' : ' muss ') + TASK + '.';
+    $('dlg-main').textContent = sentence;
+    lastMsg = sentence + (current ? ' (Los Nr. ' + pad(current.nr) + ')' : '');
+    $('dlg-copy').textContent = 'Kopieren';
+    $('dlg-sub').textContent = JOKES[Math.floor(rand() * JOKES.length)];
+    lastFocus = document.activeElement;
+    $('overlay').hidden = false;
+    $('desktop').inert = true;
+    $('taskbar').inert = true;
+    errorDing();
+    $('dlg-ok').focus();
+  }
+
+  function closeDialog() {
+    if ($('overlay').hidden) return;
+    $('overlay').hidden = true;
+    $('desktop').inert = false;
+    $('taskbar').inert = false;
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+
+  function setIcon(kind) {
+    const el = $('dlg-icon');
+    el.classList.toggle('info', kind === 'info');
+    el.textContent = kind === 'info' ? 'i' : '×';
+  }
+
+  // Einfache Meldung für die Desktop-Symbole (gleiches Fenster wie das Ergebnis, ohne Kopieren-Knopf)
+  function showInfo(title, text, sub) {
+    if (!$('overlay').hidden) return;
+    $('dlg-title').textContent = title;
+    $('dlg-main').textContent = text;
+    $('dlg-sub').textContent = sub;
+    $('dlg-copy').hidden = true;
+    setIcon('info');
+    lastFocus = document.activeElement;
+    $('overlay').hidden = false;
+    $('desktop').inert = true;
+    $('taskbar').inert = true;
+    blip(784, 0.18, 0.05, 'triangle');
+    $('dlg-ok').focus();
+  }
+
+  /* ---------- Desktop ---------- */
+  let appOpen = false;
+  let appMin = false;
+
+  function syncApp() {
+    const showApp = appOpen && !appMin;
+    $('app').hidden = !showApp;
+    $('task-app').hidden = !appOpen;
+    $('task-app').setAttribute('aria-pressed', String(showApp));
+    $('tip').hidden = appOpen;
+  }
+
+  function openApp() {
+    appOpen = true;
+    appMin = false;
+    syncApp();
+    blip(523, 0.08, 0.05, 'square');
+    blip(784, 0.12, 0.05, 'square', 0.08);
+    drawWheel();
+    $('spin').focus();
+  }
+
+  function closeApp() {
+    if (busy) return;
+    appOpen = false;
+    appMin = false;
+    syncApp();
+    $('icon-losbude').focus();
+  }
+
+  function minimizeApp() {
+    if (busy) return;
+    appMin = true;
+    syncApp();
+    $('task-app').focus();
+  }
+
+  function taskToggle() {
+    if (!appOpen || busy) return;
+    appMin = !appMin;
+    syncApp();
+  }
+
+  function activate(id) {
+    if (id === 'icon-losbude') openApp();
+    else if (id === 'icon-pc') showInfo('Arbeitsplatz', 'Hier wohnt Lamuro nicht.', 'Deshalb muss jemand los.');
+    else if (id === 'icon-trash') showInfo('Papierkorb', 'Der Papierkorb ist leer.', 'Ausreden werden hier nicht gesammelt.');
+  }
+
+  function setupDesktop() {
+    const coarse = window.matchMedia('(pointer: coarse)').matches;
+    $('tip').textContent = coarse ? 'Tippen zum Öffnen' : 'Doppelklick zum Öffnen';
+    const icons = Array.from(document.querySelectorAll('.icon'));
+    const select = (btn) => icons.forEach((i) => i.classList.toggle('sel', i === btn));
+    icons.forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        select(btn);
+        // Maus: Doppelklick. Touch und Tastatur (Enter, Leertaste): ein Tipp genügt.
+        if (coarse || e.detail === 0) activate(btn.id);
+      });
+      btn.addEventListener('dblclick', () => activate(btn.id));
+    });
+    $('desktop').addEventListener('pointerdown', (e) => {
+      if (!e.target.closest('.icon')) select(null);
+    });
+    $('app-min').addEventListener('click', minimizeApp);
+    $('app-close').addEventListener('click', closeApp);
+    $('task-app').addEventListener('click', taskToggle);
+    syncApp();
+  }
+
+  /* ---------- Konfetti ---------- */
+  function confetti() {
+    const cvs = $('confetti');
+    if (reduced() || !cvs) return;
+    const w = (cvs.width = window.innerWidth);
+    const ht = (cvs.height = window.innerHeight);
+    const c2 = cvs.getContext('2d');
+    const box = cv.getBoundingClientRect();
+    const ox = Math.min(w, Math.max(0, box.left + box.width / 2));
+    const oy = Math.min(ht * 0.8, Math.max(ht * 0.2, box.top + box.height / 2));
+    const parts = [];
+    for (let i = 0; i < 90; i++) {
+      parts.push({
+        x: ox,
+        y: oy,
+        vx: (rand() - 0.5) * 16,
+        vy: -3 - rand() * 12,
+        s: 6 + Math.floor(rand() * 3) * 2,
+        c: PALETTE[Math.floor(rand() * PALETTE.length)]
+      });
+    }
+    let t0 = null;
+    function frame(ts) {
+      if (t0 === null) t0 = ts;
+      c2.clearRect(0, 0, w, ht);
+      parts.forEach((p) => {
+        p.vy += 0.4;
+        p.x += p.vx;
+        p.y += p.vy;
+        const px = Math.round(p.x);
+        const py = Math.round(p.y);
+        c2.fillStyle = p.c;
+        c2.fillRect(px, py, p.s, p.s);
+        c2.strokeStyle = '#000000';
+        c2.lineWidth = 1;
+        c2.strokeRect(px + 0.5, py + 0.5, p.s, p.s);
+      });
+      if (ts - t0 < 2400) requestAnimationFrame(frame);
+      else c2.clearRect(0, 0, w, ht);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  /* ---------- Rad zeichnen ---------- */
+  const cv = $('wheel');
+  const ctx = cv.getContext('2d');
+  const W = 1040;
+  const H = 1100;
+  const C = W / 2;
+  const R = 486;
+
+  function textOn(hex) {
+    const n = parseInt(hex.slice(1), 16);
+    const l = 0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255);
+    return l > 128 ? '#000000' : '#ffffff';
+  }
+
+  function fit(txt, maxW) {
+    if (ctx.measureText(txt).width <= maxW) return txt;
+    let t = txt;
+    while (t.length > 1 && ctx.measureText(t + '…').width > maxW) t = t.slice(0, -1);
+    return t + '…';
+  }
+
+  function bevelRing(radius, width) {
+    ctx.lineWidth = width;
+    ctx.strokeStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(C, C, radius, Math.PI * 0.75, Math.PI * 1.75);
+    ctx.stroke();
+    ctx.strokeStyle = '#404040';
+    ctx.beginPath();
+    ctx.arc(C, C, radius, -Math.PI * 0.25, Math.PI * 0.75);
+    ctx.stroke();
+  }
+
+  function drawWheel() {
+    ctx.clearRect(0, 0, W, H);
+    // Seitenwand des Rades: gestapelte Kreise nach unten, oben heller, unten dunkler
+    const depth = 30;
+    for (let t = depth; t >= 1; t--) {
+      const k = Math.round(40 + 90 * (1 - t / depth));
+      ctx.beginPath();
+      ctx.arc(C, C + t, R + 22, 0, TAU);
+      ctx.fillStyle = 'rgb(' + k + ',' + k + ',' + k + ')';
+      ctx.fill();
+    }
+    // Felge mit Metallverlauf
+    const rg = ctx.createLinearGradient(C - R, C - R, C + R, C + R);
+    rg.addColorStop(0, '#f4f4f4');
+    rg.addColorStop(0.5, '#c0c0c0');
+    rg.addColorStop(1, '#8a8a8a');
+    ctx.beginPath();
+    ctx.arc(C, C, R + 22, 0, TAU);
+    ctx.fillStyle = rg;
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#000000';
+    ctx.stroke();
+    bevelRing(R + 19, 6);
+    ctx.beginPath();
+    ctx.arc(C, C, R + 2, 0, TAU);
+    ctx.lineWidth = 5;
+    ctx.strokeStyle = '#000000';
+    ctx.stroke();
+
+    if (!wheelSegs.length) {
+      ctx.beginPath();
+      ctx.arc(C, C, R, 0, TAU);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.fillStyle = '#000000';
+      ctx.font = '700 48px ' + FONT;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('Trag Namen ein', C, C);
+      return;
+    }
+
+    ctx.save();
+    ctx.translate(C, C);
+    ctx.rotate(rot);
+    wheelSegs.forEach((s) => {
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, R, s.a0, s.a1);
+      ctx.closePath();
+      ctx.fillStyle = s.color;
+      ctx.fill();
+      ctx.lineWidth = 5;
+      ctx.strokeStyle = '#000000';
+      ctx.stroke();
+      // Lichtkante: helle Linie vorn, dunkle hinten
+      const d = Math.min(0.012, (s.a1 - s.a0) / 4);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle = 'rgba(255,255,255,0.55)';
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos(s.a0 + d) * R, Math.sin(s.a0 + d) * R);
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(0,0,0,0.3)';
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(Math.cos(s.a1 - d) * R, Math.sin(s.a1 - d) * R);
+      ctx.stroke();
+    });
+
+    // Licht von links oben: Kuppel-Verlauf über allen Stücken, dreht nicht mit
+    ctx.save();
+    ctx.rotate(-rot);
+    const lg = ctx.createRadialGradient(-R * 0.35, -R * 0.4, R * 0.08, 0, 0, R);
+    lg.addColorStop(0, 'rgba(255,255,255,0.5)');
+    lg.addColorStop(0.4, 'rgba(255,255,255,0.06)');
+    lg.addColorStop(1, 'rgba(0,0,0,0.4)');
+    ctx.beginPath();
+    ctx.arc(0, 0, R, 0, TAU);
+    ctx.fillStyle = lg;
+    ctx.fill();
+    ctx.restore();
+
+    wheelSegs.forEach((s) => {
+      const span = s.a1 - s.a0;
+      const fs = Math.min(64, span * 0.72 * R * 0.62);
+      if (fs < 16) return;
+      const mid = (s.a0 + s.a1) / 2;
+      const screen = (((mid + rot) % TAU) + TAU) % TAU;
+      // Auf der linken Radhälfte Schrift drehen, damit sie nie auf dem Kopf steht
+      const flip = screen > Math.PI / 2 && screen < Math.PI * 1.5;
+      const fg = textOn(s.color);
+      ctx.save();
+      ctx.rotate(flip ? mid + Math.PI : mid);
+      ctx.font = '700 ' + fs + 'px ' + FONT_WHEEL;
+      ctx.textAlign = flip ? 'left' : 'right';
+      ctx.textBaseline = 'middle';
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = Math.max(4, fs * 0.2);
+      ctx.strokeStyle = fg === '#000000' ? '#ffffff' : '#000000';
+      const txt = fit(s.name, R - 40 - 110);
+      const x = flip ? -(R - 36) : R - 36;
+      ctx.strokeText(txt, x, 0);
+      ctx.fillStyle = fg;
+      ctx.fillText(txt, x, 0);
+      ctx.restore();
+    });
+
+    if (wheelSegs.length > 1) {
+      wheelSegs.forEach((s) => {
+        ctx.save();
+        ctx.rotate(s.a0);
+        ctx.beginPath();
+        ctx.arc(R + 11, 0, 9, 0, TAU);
+        ctx.fillStyle = '#404040';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(R + 9, -2, 4, 0, TAU);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.restore();
+      });
+    }
+    ctx.restore();
+
+    // Mittelstück als gewölbter Knopf mit Schatten auf dem Rad
+    ctx.beginPath();
+    ctx.arc(C + 5, C + 7, 80, 0, TAU);
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fill();
+    const hg = ctx.createRadialGradient(C - 26, C - 30, 6, C, C, 82);
+    hg.addColorStop(0, '#ffffff');
+    hg.addColorStop(0.55, '#c0c0c0');
+    hg.addColorStop(1, '#6a6a6a');
+    ctx.beginPath();
+    ctx.arc(C, C, 80, 0, TAU);
+    ctx.fillStyle = hg;
+    ctx.fill();
+    ctx.lineWidth = 4;
+    ctx.strokeStyle = '#000000';
+    ctx.stroke();
+    bevelRing(70, 7);
+    const jg = ctx.createRadialGradient(C - 8, C - 10, 2, C, C, 28);
+    jg.addColorStop(0, '#ffb0b0');
+    jg.addColorStop(0.35, '#ff0000');
+    jg.addColorStop(1, '#700000');
+    ctx.beginPath();
+    ctx.arc(C, C, 28, 0, TAU);
+    ctx.fillStyle = jg;
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#000000';
+    ctx.stroke();
+  }
+
+  function renderWheel() {
+    wheelSegs = buildSegs(weights());
+    drawWheel();
+  }
+
+  function segIndexAt(segs, r) {
+    const local = ((((-Math.PI / 2 - r) % TAU) + TAU) % TAU);
+    for (let i = 0; i < segs.length; i++) {
+      if (local >= segs[i].a0 && local < segs[i].a1) return i;
+    }
+    return segs.length - 1;
+  }
+
+  function spinTo(segs, winner) {
+    return new Promise((resolve) => {
+      const seg = segs.find((s) => s.name === winner);
+      const t = seg.a0 + (seg.a1 - seg.a0) * (0.15 + 0.7 * rand());
+      rot = ((rot % TAU) + TAU) % TAU;
+      const base = -Math.PI / 2 - t;
+      const delta = ((((base - rot) % TAU) + TAU) % TAU);
+      const total = delta + (5 + Math.floor(rand() * 3)) * TAU;
+      const start = rot;
+      const dur = reduced() ? 700 : 5200 + rand() * 800;
+      let t0 = null;
+      let lastIdx = -1;
+      function frame(ts) {
+        if (t0 === null) t0 = ts;
+        const p = Math.min(1, (ts - t0) / dur);
+        rot = start + total * (1 - Math.pow(1 - p, 4));
+        drawWheel();
+        const idx = segIndexAt(segs, rot);
+        if (lastIdx !== -1 && idx !== lastIdx) tick(Math.pow(1 - p, 3));
+        lastIdx = idx;
+        $('progress-fill').style.width = (p * 100).toFixed(1) + '%';
+        if (p < 1) requestAnimationFrame(frame);
+        else resolve();
+      }
+      requestAnimationFrame(frame);
+    });
+  }
+
+  /* ---------- Texte ---------- */
+  function listNames(arr) {
+    try {
+      return new Intl.ListFormat('de', { style: 'long', type: 'conjunction' }).format(arr);
+    } catch (e) {
+      return arr.join(', ');
+    }
+  }
+
+  function fmtTime(ts) {
+    try {
+      return new Intl.DateTimeFormat('de-DE', { weekday: 'short', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(ts));
+    } catch (e) {
+      return new Date(ts).toLocaleString();
+    }
+  }
+
+  function modeText() {
+    const n = state.names.length;
+    if (state.mode === 'random') {
+      return n >= 2
+        ? 'Jede Person hat jedes Mal die gleiche Chance. Bei ' + n + ' Leuten trifft es mit ' + Math.round(100 / n) + ' % dieselbe Person wie beim letzten Mal.'
+        : 'Jede Person hat jedes Mal die gleiche Chance.';
+    }
+    if (state.mode === 'round') {
+      return 'Alle kommen einmal dran, dann beginnt eine neue Runde. Wer schon dran war, verschwindet vom Rad, bis alle durch sind.';
+    }
+    return 'Wer öfter dran war, bekommt ein kleineres Stück am Rad. Mit jedem Mal mehr halbiert sich die Chance gegenüber der Person, die am seltensten dran war (bis zu vier Mal).';
+  }
+
+  /* ---------- Rendern ---------- */
+  function renderTicket() {
+    const c = current;
+    const nameEl = $('t-name');
+    $('t-nr').textContent = pad(c ? c.nr : state.seq + 1);
+    nameEl.classList.toggle('is-idle', !c);
+    if (!c) {
+      nameEl.textContent = 'Wen trifft es?';
+      $('t-meta').textContent = 'Drück auf Losen, das Rad entscheidet.';
+      return;
+    }
+    if (!c.names.length) {
+      nameEl.textContent = 'Das Rad dreht …';
+      $('t-meta').textContent = '';
+    } else if (c.pending) {
+      nameEl.textContent = listNames(c.names) + ' …';
+      $('t-meta').textContent = 'Die nächste Person wird gezogen.';
+    } else {
+      nameEl.textContent = listNames(c.names);
+      $('t-meta').textContent = fmtTime(c.ts) + ' · ' + MODE_LABEL[c.mode] + (c.mode === 'round' ? ' · Runde ' + c.round : '');
+    }
+  }
+
+  function popTicket() {
+    if (reduced()) return;
+    const t = $('ticket');
+    t.classList.remove('pop');
+    void t.offsetWidth;
+    t.classList.add('pop');
+  }
+
+  function renderPeople() {
+    const ul = $('people');
+    ul.replaceChildren();
+    const w = weights();
+    let sum = 0;
+    w.forEach((v) => { sum += v; });
+    const c = counts();
+    const max = Math.max(1, ...state.names.map((n) => c.get(n)));
+    if (!state.names.length) {
+      ul.append(h('li', { class: 'note', style: 'padding:10px 0;margin:0', text: 'Noch niemand dabei. Trag unten Namen ein.' }));
+    }
+    state.names.forEach((n, i) => {
+      const color = PALETTE[i % PALETTE.length];
+      const done = state.mode === 'round' && state.roundDone.indexOf(n) !== -1;
+      const pct = sum > 0 ? Math.round((w.get(n) / sum) * 100) : 0;
+      ul.append(h('li', { class: done ? 'person done' : 'person' }, [
+        h('span', { class: 'dot', style: 'background:' + color }),
+        h('span', { class: 'pname' }, [n, done ? h('small', { text: 'schon dran' }) : null]),
+        h('span', { class: 'chance', text: pct + ' %', title: 'Chance im nächsten Zug' }),
+        h('button', { type: 'button', class: 'btn rm', 'aria-label': n + ' entfernen', text: '×', onclick: () => removeName(n) }),
+        h('div', { class: 'pbar' }, [
+          h('div', { class: 'ptrack' }, [h('div', { class: 'pfill', style: 'width:' + Math.round((c.get(n) / max) * 100) + '%' })]),
+          h('span', { text: c.get(n) + '× dran' })
+        ])
+      ]));
+    });
+    const info = $('round-info');
+    if (state.mode === 'round' && state.names.length) {
+      info.hidden = false;
+      info.textContent = 'Runde ' + state.round + ': ' + state.roundDone.length + ' von ' + state.names.length + ' waren dran.';
+    } else {
+      info.hidden = true;
+    }
+    $('example-note').hidden = !state.example;
+  }
+
+  function renderHistory() {
+    const tb = $('log');
+    tb.replaceChildren();
+    const more = $('log-more');
+    const clear = $('clear-log');
+    if (!state.history.length) {
+      tb.append(h('tr', null, [h('td', { class: 'empty', colspan: '4', text: 'Noch nichts gelost. Jeder Zug erscheint hier.' })]));
+      more.hidden = true;
+      clear.hidden = true;
+      return;
+    }
+    state.history.slice(0, 8).forEach((e) => {
+      tb.append(h('tr', null, [
+        h('td', { class: 'nr', text: '#' + pad(e.nr) }),
+        h('td', { class: 'who', text: listNames(e.names) }),
+        h('td', { class: 'when', text: fmtTime(e.ts) }),
+        h('td', { class: 'mode', text: MODE_LABEL[e.mode] })
+      ]));
+    });
+    if (state.history.length > 8) {
+      more.hidden = false;
+      more.textContent = '… und ' + (state.history.length - 8) + ' ältere Züge.';
+    } else {
+      more.hidden = true;
+    }
+    clear.hidden = false;
+  }
+
+  function renderControls() {
+    $('count-val').textContent = state.count;
+    $('count-minus').disabled = state.count <= 1;
+    $('count-plus').disabled = state.count >= Math.max(1, state.names.length - 1);
+    $('mode-' + state.mode).checked = true;
+    $('mode-text').textContent = modeText();
+    $('sound').textContent = state.sound ? 'Ton an' : 'Ton aus';
+    $('sound').setAttribute('aria-pressed', String(state.sound));
+
+    const enough = state.names.length >= 2;
+    const spin = $('spin');
+    spin.disabled = busy || !enough;
+    spin.textContent = busy ? 'Das Rad dreht …' : (enough ? 'Losen' : 'Zu wenige Namen');
+    $('status').textContent = !enough
+      ? 'Trag mindestens zwei Namen ein.'
+      : (state.count > 1 ? 'Gezogen werden ' + state.count + ' Personen nacheinander.' : '');
+    $('sb-n').textContent = 'Teilnehmer: ' + state.names.length;
+    $('sb-mode').textContent = MODE_LABEL[state.mode];
+    $('sb-round').textContent = state.mode === 'round'
+      ? 'Runde ' + state.round + ': ' + state.roundDone.length + ' von ' + state.names.length
+      : 'Züge gesamt: ' + state.seq;
+    $('side').inert = busy;
+  }
+
+  function renderAll() {
+    renderPeople();
+    renderControls();
+    renderHistory();
+    renderTicket();
+    renderWheel();
+  }
+
+  /* ---------- Aktionen ---------- */
+  function resetRoundIfComplete() {
+    if (state.mode === 'round' && state.names.length && state.names.every((n) => state.roundDone.indexOf(n) !== -1)) {
+      state.roundDone = [];
+      state.round++;
+    }
+  }
+
+  function removeName(n) {
+    if (busy) return;
+    state.names = state.names.filter((x) => x !== n);
+    state.roundDone = state.roundDone.filter((x) => x !== n);
+    state.example = false;
+    resetRoundIfComplete();
+    clampCount();
+    save();
+    renderAll();
+  }
+
+  function addNames(raw) {
+    const parts = raw.split(/[,;\n]/).map((s) => s.trim()).filter(Boolean);
+    let added = 0;
+    let msg = '';
+    parts.forEach((p) => {
+      const name = p.slice(0, 18);
+      if (state.names.length >= MAX_NAMES) { msg = 'Mehr als ' + MAX_NAMES + ' Namen passen nicht aufs Rad.'; return; }
+      if (state.names.some((n) => n.toLowerCase() === name.toLowerCase())) { msg = name + ' ist schon dabei.'; return; }
+      state.names.push(name);
+      added++;
+    });
+    if (added) state.example = false;
+    return { added, msg };
+  }
+
+  async function draw() {
+    if (busy || state.names.length < 2) return;
+    busy = true;
+    audio();
+    clampCount();
+    const k = state.count;
+    const roundAt = state.round;
+    const mode = state.mode;
+    const picks = [];
+    const excl = new Set();
+    current = { nr: state.seq + 1, names: [], round: roundAt, mode, pending: true };
+    renderControls();
+    renderTicket();
+    $('progress').hidden = false;
+
+    for (let i = 0; i < k; i++) {
+      const segs = buildSegs(weights(excl));
+      wheelSegs = segs;
+      drawWheel();
+      const winner = pickWeighted(segs);
+      $('progress-fill').style.width = '0%';
+      spinStart();
+      await spinTo(segs, winner);
+      picks.push(winner);
+      excl.add(winner);
+      if (mode === 'round') {
+        if (state.roundDone.indexOf(winner) === -1) state.roundDone.push(winner);
+        resetRoundIfComplete();
+      }
+      current.names = picks.slice();
+      renderTicket();
+      if (i < k - 1) await sleep(reduced() ? 200 : 1100);
+    }
+
+    $('progress').hidden = true;
+    state.seq++;
+    state.history.unshift({ nr: state.seq, ts: Date.now(), names: picks, mode, round: roundAt });
+    state.history = state.history.slice(0, 200);
+    current.pending = false;
+    current.ts = state.history[0].ts;
+    save();
+    busy = false;
+    fanfare();
+    confetti();
+    renderPeople();
+    renderControls();
+    renderHistory();
+    renderTicket();
+    popTicket();
+    const winners = picks.slice();
+    setTimeout(() => { if (!busy) showDialog(winners); }, reduced() ? 300 : 1100);
+    setTimeout(() => { if (!busy) renderWheel(); }, 1800);
+  }
+
+  function tickClock() {
+    try {
+      $('clock').textContent = new Intl.DateTimeFormat('de-DE', { hour: '2-digit', minute: '2-digit' }).format(new Date());
+    } catch (e) { /* ignorieren */ }
+  }
+
+  /* ---------- Start ---------- */
+  function init() {
+    $('count-minus').addEventListener('click', () => { if (busy) return; state.count = Math.max(1, state.count - 1); save(); renderControls(); });
+    $('count-plus').addEventListener('click', () => { if (busy) return; state.count++; clampCount(); save(); renderControls(); });
+    document.querySelectorAll('input[name="mode"]').forEach((r) => {
+      r.addEventListener('change', () => {
+        if (busy || !r.checked) return;
+        state.mode = r.value;
+        save();
+        renderPeople();
+        renderControls();
+        renderTicket();
+        renderWheel();
+      });
+    });
+    $('add-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (busy) return;
+      const input = $('name-in');
+      const res = addNames(input.value);
+      $('add-msg').textContent = res.msg;
+      if (res.added || !res.msg) input.value = '';
+      if (res.added) {
+        clampCount();
+        save();
+        renderAll();
+      }
+      input.focus();
+    });
+    $('clear-example').addEventListener('click', () => {
+      if (busy) return;
+      state.names = [];
+      state.roundDone = [];
+      state.example = false;
+      clampCount();
+      save();
+      renderAll();
+      $('name-in').focus();
+    });
+    $('sound').addEventListener('click', () => {
+      state.sound = !state.sound;
+      save();
+      renderControls();
+      if (state.sound) blip(660, 0.08, 0.05, 'square');
+    });
+    $('spin').addEventListener('click', draw);
+
+    document.addEventListener('pointerdown', (e) => clickSound(e.target));
+    $('dlg-ok').addEventListener('click', closeDialog);
+    $('dlg-x').addEventListener('click', closeDialog);
+    $('dlg-copy').addEventListener('click', async () => {
+      const b = $('dlg-copy');
+      try {
+        await navigator.clipboard.writeText(lastMsg);
+        b.textContent = 'Kopiert!';
+      } catch (e) {
+        b.textContent = 'Nicht möglich';
+      }
+      setTimeout(() => { b.textContent = 'Kopieren'; }, 1800);
+    });
+    document.addEventListener('keydown', (e) => {
+      if ($('overlay').hidden) return;
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        closeDialog();
+      } else if (e.key === 'Tab') {
+        e.preventDefault();
+        const f = [$('dlg-x'), $('dlg-copy'), $('dlg-ok')].filter((el) => !el.hidden);
+        const i = f.indexOf(document.activeElement);
+        const next = e.shiftKey ? (i <= 0 ? f.length - 1 : i - 1) : (i + 1) % f.length;
+        f[next].focus();
+      }
+    });
+
+    let armed = null;
+    $('clear-log').addEventListener('click', (e) => {
+      const b = e.currentTarget;
+      if (busy) return;
+      if (!armed) {
+        b.textContent = 'Wirklich leeren?';
+        b.classList.add('danger');
+        armed = setTimeout(() => { armed = null; b.textContent = 'Verlauf leeren'; b.classList.remove('danger'); }, 4000);
+        return;
+      }
+      clearTimeout(armed);
+      armed = null;
+      b.textContent = 'Verlauf leeren';
+      b.classList.remove('danger');
+      state.history = [];
+      state.roundDone = [];
+      state.round = 1;
+      state.seq = 0;
+      current = null;
+      save();
+      renderAll();
+    });
+
+    renderAll();
+    setupDesktop();
+    tickClock();
+    setInterval(tickClock, 15000);
+
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => { if (!busy) drawWheel(); });
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
